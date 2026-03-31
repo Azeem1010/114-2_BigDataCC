@@ -1,0 +1,36 @@
+姓名：韓丞哲
+學號：c112181105
+A1：
+
+chown (Change Owner)：用來改變檔案或目錄的「擁有者 (Owner)」與「所屬群組 (Group)」。
+
+使用情境：當你以 root 權限執行程式，並產生了一份 ROS 鏡頭的影像測試日誌檔，但後續需要讓一般使用者（例如你自己）來存取或分析時，就會使用 chown 將該檔案的擁有權轉移給一般使用者。
+
+chmod (Change Mode)：用來改變檔案或目錄針對擁有者、群組與其他人的「讀取 (r)、寫入 (w)、執行 (x) 權限」。
+
+使用情境：當你撰寫了一支用來啟動或控制機械手臂的腳本檔（例如 start_pincher.sh），系統預設建立的文字檔並沒有執行權限，這時就需要使用 chmod +x start_pincher.sh 賦予它執行權限，才能順利跑起來。
+
+A2：
+要達成這個需求，可以依序執行以下指令：
+
+建立一個專案專用的群組：
+sudo groupadd project_team
+
+將自己和另外 3 位同學都加入這個群組（需替換成實際帳號）：
+sudo usermod -aG project_team 你的帳號 同學A 同學B 同學C
+
+建立共用資料夾：
+mkdir project_workspace
+
+將資料夾的所屬群組改為剛剛建立的專案群組：
+sudo chgrp project_team project_workspace
+
+設定權限為擁有者與群組皆可讀寫執行，其他人無任何權限 (rwxrwx---)：
+chmod 770 project_workspace
+
+A3：
+Linux 判斷權限的順序為：先檢查是否為「擁有者 (Owner)」，若不是再檢查是否屬於「群組 (Group) 成員」，若皆不是才套用「其他人 (Others)」的權限。
+
+(a) alice 能做什麼：alice 是擁有者，套用前三碼 rwx。她可以讀取 (Read)、寫入/修改 (Write) 以及執行 (Execute) 該檔案。
+(b) bob 能做什麼：bob 屬於 project 群組，套用中間三碼 r-x。他可以讀取 (Read) 與執行 (Execute) 該檔案，但不能修改或刪除它。
+(c) charlie 能做什麼：charlie 既不是擁有者也不在群組內，套用最後三碼 ---。他對這個檔案沒有任何權限，無法讀取、無法寫入也無法執行。

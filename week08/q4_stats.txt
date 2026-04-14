@@ -1,0 +1,111 @@
+姓名：韓丞哲
+學號：C112181105
+
+=== 任務 1：統計函數 ===
+
+Q1：查詢船舶總數、平均噸位、最大噸位、最小噸位
+
+SQL：SELECT COUNT(*) as 總船數, AVG(tonnage) as 平均噸位, MAX(tonnage) as 最大噸位, MIN(tonnage) as 最小噸位 FROM ships;
+
+結果：
++---------+-----------+-----------+-----------+
+| 總船數  | 平均噸位  | 最大噸位  | 最小噸位  |
++---------+-----------+-----------+-----------+
+|       5 |146200.0000|    221000 |     85000 |
++---------+-----------+-----------+-----------+
+
+Q2：查詢噸位最大的前 3 艘船（使用 ORDER BY + LIMIT）
+
+SQL：SELECT * FROM ships ORDER BY tonnage DESC LIMIT 3;
+
+結果：
++----+-------------------+-----------+---------+--------------+
+| id | ship_name         | ship_type | tonnage | arrival_date |
++----+-------------------+-----------+---------+--------------+
+|  1 | Ever Given        | Container | 221000  | 2026-04-10   |
+|  5 | Kaohsiung Express | Container | 180000  | 2026-04-14   |
+|  2 | Yang Ming Wish    | Container | 150000  | 2026-04-11   |
++----+-------------------+-----------+---------+--------------+
+
+=== 任務 2：GROUP BY 分組統計 ===
+
+Q3：統計每種船型（ship_type）的船舶數量和平均噸位
+
+SQL：SELECT ship_type, COUNT(*) as 船舶數量, AVG(tonnage) as 平均噸位 FROM ships GROUP BY ship_type;
+
+結果：
++-----------+----------+----------+
+| ship_type | 船舶數量 | 平均噸位 |
++-----------+----------+----------+
+| Bulk      |        1 | 85000    |
+| Container |        3 |183666.67 |
+| Tanker    |        1 | 95000    |
++-----------+----------+----------+
+
+Q4：統計每種職位（rank）的船員人數和平均薪水
+
+SQL：SELECT `rank`, COUNT(*) as 船員人數, AVG(salary) as 平均薪水 FROM crew GROUP BY `rank`;
+
+結果：
++----------+----------+----------+
+| rank     | 船員人數 | 平均薪水 |
++----------+----------+----------+
+| Captain  |        2 |   120000 |
+| Crew     |        2 |   41500  |
+| Engineer |        2 |   65000  |
+| Officer  |        2 |   75000  |
++----------+----------+----------+
+
+=== 任務 3：LEFT JOIN 多表查詢 ===
+
+Q5：查詢每位船員的姓名、職位、薪水，以及他所屬的船名
+
+SQL：SELECT c.name, c.`rank`, c.salary, s.ship_name FROM crew c LEFT JOIN ships s ON c.ship_id = s.id;
+
+結果：
++-------------------+----------+-----------+-------------------+
+| name              | rank     | salary    | ship_name         |
++-------------------+----------+-----------+-------------------+
+| Captain Chen      | Captain  | 120000.00 | Ever Given        |
+| Officer Wang      | Officer  |  75000.00 | Ever Given        |
+| Engineer Liu      | Engineer |  65000.00 | Ever Given        |
+| Captain Lee       | Captain  | 120000.00 | Yang Ming Wish    |
+| Officer Zhang     | Officer  |  75000.00 | Yang Ming Wish    |
+| Engineer Su       | Engineer |  65000.00 | Formosa 1         |
+| Crew Member Huang | Crew     |  42000.00 | Ocean Star        |
+| Crew Member Wu    | Crew     |  41000.00 | Kaohsiung Express |
++-------------------+----------+-----------+-------------------+
+
+Q6：找出沒有任何船員的船舶
+
+SQL：SELECT s.* FROM ships s LEFT JOIN crew c ON s.id = c.ship_id WHERE c.id IS NULL;
+
+結果：
+（本次查詢結果為空，因為所有 5 艘船都至少有 1 名船員）
+
+如果要驗證，可以執行：SELECT COUNT(*) FROM ships WHERE id NOT IN (SELECT DISTINCT ship_id FROM crew WHERE ship_id IS NOT NULL);
+
+當前所有船舶都有船員分配，所以沒有沒有船員的船。
+
+請回答：
+Q：LEFT JOIN 和直接查兩張表（SELECT * FROM crew, ships WHERE ...）有什麼不同？
+   提示：想想「沒有船員的船」在兩種寫法下會不會出現。
+A：
+LEFT JOIN 和直接查詢（笛卡爾積 + WHERE）的主要差異：
+
+1. 保留未匹配數據：
+   - LEFT JOIN：保留左表所有行，即使右表沒有匹配的數據。例如「沒有船員的船」會出現，對應的船員欄位顯示 NULL
+   - 笛卡爾積 + WHERE：只返回兩張表都有匹配的行，「沒有船員的船」不會出現
+
+2. 具體例子：
+   - LEFT JOIN：SELECT s.*, c.* FROM ships s LEFT JOIN crew c ON s.id = c.ship_id
+     結果：所有船都會出現，沒有船員的船其對應欄位為 NULL
+   
+   - 笛卡爾積：SELECT s.*, c.* FROM ships s, crew c WHERE s.id = c.ship_id
+     結果：只有有船員的船才會出現，沒有船員的船不會在結果中
+
+3. 應用場景：
+   - LEFT JOIN：適合查詢「所有 A 及其對應的 B」，包括沒有 B 的情況（如統計每艘船的船員數，顯示 0 人）
+   - 內連接（INNER JOIN 或 WHERE）：適合查詢「既有 A 又有 B 的情況」（如只查詢有船員的船）
+
+4. 結論：LEFT JOIN 更靈活強大，可以展示更完整的數據關係，特別是在需要查找「缺少關聯」的情況時。
